@@ -124,6 +124,7 @@ mod tests {
         let app = get_router(container.clone());
 
         let response = app
+            .clone()
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/users")
@@ -138,6 +139,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::CREATED);
+
+        // create duplicate user
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/users")
+                    .method("POST")
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(
+                        r#"{"username":"newuser","password":"anotherpassword"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[sqlx::test]
